@@ -8,9 +8,9 @@ import sys
 def rgb2hex(rgb):
     return '#%02x%02x%02x' % rgb
 
-def get_label_clr(rgb, thresh=1.5):
+def get_label_clr(rgb, thresh=0.727):
     r, g, b = rgb
-    if (r+g)/float(b) < thresh:
+    if float(b)/(r+g) > thresh:
         return '#ffffff' ## i.e. white
     else:
         return '#000000' ## i.e. black
@@ -22,7 +22,7 @@ def main(array_layout='PBL array layout.xlsx'):
     print
 
     ## Determine array positions with no labels - these positions will be represented 
-    ## as white square on array grid layout.
+    ## as white squares on array grid layout.
     true_spots = ~pd.isna(array_df) ## tilde symbol inverts boolean selection
     print 'True yeast spots on prey array grid:'
     print true_spots
@@ -71,8 +71,8 @@ def main(array_layout='PBL array layout.xlsx'):
             spot_clrs_hex.append(clrs_row_hex)
             spot_clrs_dec.append(clrs_row_dec)
 
-        fig = plt.figure() ## Instantiate a figure object.
-        plt.imshow(spot_clrs_dec) ## Plot grid of array colours.
+        fig = plt.figure() ## Create a figure object.
+        plt.imshow(spot_clrs_dec, aspect='auto') ## Plot grid of array colours.
 
 
         ## Prepare lines for creation of a file with annotation of iTOL tree using Y3H colours ...
@@ -83,7 +83,7 @@ def main(array_layout='PBL array layout.xlsx'):
         for y, row in enumerate(array_df.values):
             for x, name in enumerate(row):
 
-                ## Skip this step for spots with now corresponding label.
+                ## Skip this step for spots with no corresponding label.
                 if true_spots[x][y]: ## Note: pandas-style indexing 
 
                     ## Convert spot colour to hex. (Note x and y are swapped because the pandas 
@@ -97,12 +97,17 @@ def main(array_layout='PBL array layout.xlsx'):
                     itol_lines.append(name+',label,'+txt_clr_hex+',normal,1')
 
 
-                    plt.text(x, y, name, ha='center', va='center', color=txt_clr_hex)
+                    plt.text(x, y, name, ha='center', va='center', color=txt_clr_hex, size=13)
                     
         ## Adjust figure properties and write file showing array labels over
         ## coloured cells.
+        ax = plt.gca()
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_frame_on(0)
         plt.subplots_adjust(left=0, right=1, bottom=0, top=1)
-        fig.set_size_inches(3, 4)
+
+        fig.set_size_inches(0.5*array_df.shape[1], 0.5*array_df.shape[0])
         if 'coloured arrays' not in [d for d in listdir('.') if path.isdir(d)]:
             mkdir('coloured arrays')
         fig.savefig(path.join('.', 'coloured arrays', 'spot array - '+input_fbase+'.png'), dpi=400)
